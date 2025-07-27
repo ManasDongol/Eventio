@@ -1,3 +1,11 @@
+using System.Text;
+using Eventing.ApiService.ConfigurationSettings;
+using Eventing.ApiService.Data.Entities;
+using Eventing.ApiService.Data.Entities.Seeders;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +21,53 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 
+builder.Services.AddDbContext<EventingDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+/*
+builder.AddNpgsqlDbContext<DbContext>("eventing-db", configureDbContextOptions: options =>
+{
+    options.UseAsyncSeeding(async (DbContext, _, CancellationToken) =>
+        await UserSeeder.SeedAsync(context, cancellationToken);
+        await EventSeeder.SeedAsync(context,cancellationToken);
+    )
+};*/
+
+
+var jwtSection = builder.Configuration.GetSection("JwtSettings");
+builder.Services.Configure<JwtSettings>(jwtSection);
+
+var jwtSettings = jwtSection.Get<JwtSettings>();
+var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
+
+builder.Services.AddIdentity<Users, IdentityRole<Guid>>()
+    .AddEntityFrameworkStores<EventingDbContext>()
+    .AddDefaultTokenProviders()
+    .AddApiEndpoints();
+
+builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        }
+        )
+    .AddJwtBearer(options =>
+        {
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+                ValidAudience = builder.Configuration["JwtSettings:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true
+            };
+        }
+        );
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -24,6 +79,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
     const string scalarUiPath = "/api-reference";
+    
+    app.MapPost("/migrate-db", (EventingDbContext dbContext) => dbContext.Database.MigrateAsync());
+
     app.MapScalarApiReference(scalarUiPath,
         options => options
             .WithTitle("Eventing Api Reference")
@@ -33,6 +91,11 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/", () => Results.Redirect(scalarUiPath, permanent: true))
         .ExcludeFromDescription();
 }
+
+//middleware
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapIdentityApi<Users>();
 
 app.MapControllers();
 

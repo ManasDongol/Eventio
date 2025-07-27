@@ -18,5 +18,11 @@ public sealed record UpdateUserRequestDto(
     [Required]
     [MaxLength(128)]
     [property: Description("The user's address, up to 128 characters")]
-    string Address
+    string Address,
+    
+    [Required]
+    [MaxLength(128)]
+    [property: Description("The user's password")]
+    string Password
+    
 );
