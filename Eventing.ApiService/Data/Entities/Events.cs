@@ -36,7 +36,5 @@ public class Events
     [MaxLength(500)]
     public string? EventDescription {get; set;}
     
-    [ForeignKey(nameof(CreatedBy))]
-    //nav property UserID - ForeignKey
-    public Users  CreatedByUsers {get; set;}
+  
 }

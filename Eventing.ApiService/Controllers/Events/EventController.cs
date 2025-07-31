@@ -22,7 +22,7 @@ public sealed class EventController : ApiBaseController
     
     //now for getting all Events
 
-    [HttpGet]
+    [HttpGet("all")]
     [EndpointName("GetEvents")]
     [EndpointDescription("gets all events")]
     [EndpointSummary("gets all events")]
@@ -40,7 +40,7 @@ public sealed class EventController : ApiBaseController
         return Ok(evenResponses);
     }
 
-    [HttpGet]
+    [HttpGet("id")]
     [EndpointName("GetEventById")]
     [EndpointDescription("gets event by id")]
     [EndpointSummary("gets event by id")]
@@ -63,9 +63,7 @@ public sealed class EventController : ApiBaseController
     [EndpointSummary("creates a new event")]
     public IActionResult Create([FromBody, Description("The event details to create")] CreateEventRequestDto dto)
     {
-       
         
-
         var _event = new Data.Entities.Events()
         {
             Id = Guid.NewGuid(),
@@ -83,6 +81,52 @@ public sealed class EventController : ApiBaseController
         _context.SaveChanges();
 
         return CreatedAtAction(nameof(GetById), new { id = _event.Id }, null);
+    }
+
+    [HttpPut("{id:guid}")]
+    [EndpointName("UpdateEvent")]
+    [EndpointDescription("updates an event")]
+    [EndpointSummary("updates an event")]
+
+    public async Task<ActionResult> UpdateEvent([FromQuery] Guid id,[FromBody] Dto.UpdateEventRequestDto_ dto)
+    {
+        var updateEvent = await _context.Events.FindAsync(id);
+
+        if (updateEvent == null) 
+            return NotFound();
+        updateEvent.Title = dto.Title;
+        updateEvent.EventType = dto.EventType;
+        updateEvent.StartTime = ToUtc(dto.StartTime);
+        updateEvent.EndTime=ToUtc(dto.EndtTime);
+        updateEvent.Location=dto.Location;
+        updateEvent.EventDescription=dto.EventDescription;
+
+
+        await _context.SaveChangesAsync();
+        return Ok("successfully updated event");
+    }
+
+
+
+    [HttpGet]
+    [EndpointName("GetAllEvents")]
+    [EndpointDescription("gets all events")]
+    [EndpointSummary("gets the events of the specific user")]
+    public async Task<ActionResult<List<EventResponse>>> GetAllEvents([FromQuery] Guid id)
+    {
+        //using user id we extract all the rows with the specific user id
+        var events = await _context.Events
+            
+            .Where((x => x.CreatedBy == id))
+            .ToListAsync();
+/* /.Include(x=>x.CreatedByUsers)*/
+        if (!events.Any())
+        {
+            return NotFound();
+        }
+
+        return Ok(events);
+
     }
     
     //helper method to convert datetimes
