@@ -17,8 +17,8 @@ public class Attendees
     public Users? User { get; set; } = null!;
 
     public RsvpResponse Response { get; set; } = RsvpResponse.Pending;
-    public DateTime RespondedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime? RespondedAt { get; set; } = null!;
+    public DateTime? UpdatedAt { get; set; } = null!;
     
     [MaxLength(500)]
     public string? Comment { get; set; }

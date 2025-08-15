@@ -14,12 +14,13 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddFluentUIComponents();
 
-builder.Services.AddHttpClient<WeatherApiClient>(client =>
+builder.Services.AddHttpClient("login", client =>
 {
-    // This URL uses "https+http://" to indicate HTTPS is preferred over HTTP.
-    // Learn more about service discovery scheme resolution at https://aka.ms/dotnet/sdschemes.
-    client.BaseAddress = new("https+http://apiservice");
+    client.BaseAddress = new Uri("https://localhost:7529");
 });
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("login"));
+
 
 var app = builder.Build();
 

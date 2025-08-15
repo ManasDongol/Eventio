@@ -7,6 +7,7 @@ using Eventing.ApiService.Data;
 using Eventing.ApiService.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Eventing.ApiService.Controllers.Events;
 
@@ -21,7 +22,7 @@ public sealed class EventController : ApiBaseController
     }
     
     //now for getting all Events
-
+    [Authorize]
     [HttpGet("all")]
     [EndpointName("GetEvents")]
     [EndpointDescription("gets all events")]
@@ -40,28 +41,28 @@ public sealed class EventController : ApiBaseController
         return Ok(evenResponses);
     }
 
-    [HttpGet("id")]
+    [HttpGet("{id}")]
     [EndpointName("GetEventById")]
     [EndpointDescription("gets event by id")]
     [EndpointSummary("gets event by id")]
-    public async Task<ActionResult> GetById([FromRoute, Description("The ID of the user to retrieve")] Guid id)
+    public async Task<ActionResult> GetById([FromRoute, Description("The ID of the event to retrieve")] Guid id)
     {
         // Retrieve the user from the database asynchronously
-        var _event = await _context.Events.FindAsync(id);
+        var event1 = await _context.Events.FindAsync(id);
 
 
-        if (_event == null)
+        if (event1 == null)
         {
             return NotFound();
         }
-        return Ok(EventResponse.From(_event));
+        return Ok(EventResponse.From(event1));
     }
 
     [HttpPost]
     [EndpointName("CreateEvent")]
     [EndpointDescription("Creates a new event")]
     [EndpointSummary("creates a new event")]
-    public IActionResult Create([FromBody, Description("The event details to create")] CreateEventRequestDto dto)
+    public async Task<IActionResult> Create(CreateEventRequestDto dto)
     {
         
         var _event = new Data.Entities.Events()
@@ -78,7 +79,7 @@ public sealed class EventController : ApiBaseController
         };
 
         _context.Events.Add(_event);
-        _context.SaveChanges();
+        int changes=await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetById), new { id = _event.Id }, null);
     }
@@ -116,10 +117,9 @@ public sealed class EventController : ApiBaseController
     {
         //using user id we extract all the rows with the specific user id
         var events = await _context.Events
-            
             .Where((x => x.CreatedBy == id))
             .ToListAsync();
-/* /.Include(x=>x.CreatedByUsers)*/
+           
         if (!events.Any())
         {
             return NotFound();
@@ -128,6 +128,23 @@ public sealed class EventController : ApiBaseController
         return Ok(events);
 
     }
+
+    [HttpDelete]
+    [EndpointName("DeleteEvent")]
+    [EndpointDescription("deletes an event")]
+    [EndpointSummary("deletes an event")]
+    public async Task<IActionResult> DeleteEvent(Guid id)
+    {
+        var exists=await _context.Events.FindAsync(id);
+        if (exists==null)
+        {
+            return NotFound();
+        }
+        _context.Events.Remove(exists);
+        var hasbeendelete = await _context.SaveChangesAsync();
+        return Ok(hasbeendelete);
+    }
+    
     
     //helper method to convert datetimes
     private DateTime ToUtc(DateTime dateTime)

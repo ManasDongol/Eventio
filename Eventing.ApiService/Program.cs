@@ -2,10 +2,12 @@ using System.Text;
 using Eventing.ApiService.ConfigurationSettings;
 using Eventing.ApiService.Data.Entities;
 using Eventing.ApiService.Data.Entities.Seeders;
+using Eventing.ApiService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MudBlazor.Services;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +33,7 @@ builder.AddNpgsqlDbContext<DbContext>("eventing-db", configureDbContextOptions: 
         await EventSeeder.SeedAsync(context,cancellationToken);
     )
 };*/
+builder.Services.AddRazorPages();
 
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
@@ -38,6 +41,7 @@ builder.Services.Configure<JwtSettings>(jwtSection);
 
 var jwtSettings = jwtSection.Get<JwtSettings>();
 var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
+
 
 builder.Services.AddIdentity<Users, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<EventingDbContext>()
@@ -67,10 +71,15 @@ builder.Services.AddAuthentication(options =>
         }
         );
 
+builder.Services.AddScoped<JwtTokenService>();
+
+
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline.
+
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -98,5 +107,5 @@ app.UseAuthorization();
 app.MapIdentityApi<Users>();
 
 app.MapControllers();
-
+app.MapRazorPages();
 app.Run();
