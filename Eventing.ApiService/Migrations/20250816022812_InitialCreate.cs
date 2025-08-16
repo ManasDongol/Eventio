@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventing.ApiService.Migrations
 {
     /// <inheritdoc />
-    public partial class InitailCreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -171,17 +171,17 @@ namespace Eventing.ApiService.Migrations
                     starttime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     endtime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     createdtime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EventDescription = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                    EventDescription = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    UsersId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_events", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_events_users_CreatedBy",
-                        column: x => x.CreatedBy,
+                        name: "FK_events_users_UsersId",
+                        column: x => x.UsersId,
                         principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -192,7 +192,7 @@ namespace Eventing.ApiService.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     EventId = table.Column<Guid>(type: "uuid", nullable: false),
                     Response = table.Column<int>(type: "integer", nullable: false),
-                    RespondedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsOrganizer = table.Column<bool>(type: "boolean", nullable: false)
@@ -251,9 +251,9 @@ namespace Eventing.ApiService.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_events_CreatedBy",
+                name: "IX_events_UsersId",
                 table: "events",
-                column: "CreatedBy");
+                column: "UsersId");
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",

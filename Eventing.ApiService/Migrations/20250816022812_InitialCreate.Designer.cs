@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventing.ApiService.Migrations
 {
     [DbContext(typeof(EventingDbContext))]
-    [Migration("20250802165300_MakeRespondedAtNullable")]
-    partial class MakeRespondedAtNullable
+    [Migration("20250816022812_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -24,6 +24,7 @@ public class AuthenticationController: ApiBaseController
         _userManager = userManager;
         _tokenService = tokenService;
     }
+    
     [HttpPost("login")]
     public async Task<IActionResult> authenticateUserLogin([FromBody] loginUserDto dto)
     {
@@ -48,5 +49,75 @@ public class AuthenticationController: ApiBaseController
         
         Console.WriteLine("Logged in!");
         return Ok("succesful login");
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> registerUser([FromBody] CreateUserRequestDto dto)
+    {
+      
+        var existingUser = await _userManager.FindByNameAsync(dto.Username);
+        if (existingUser != null)
+        {
+            Console.WriteLine($"Username {dto.Username} already exists");
+            return BadRequest("Username already exists");
+        }
+
+        
+        var existingEmailUser = await _userManager.FindByEmailAsync(dto.Email);
+        if (existingEmailUser != null)
+        {
+            Console.WriteLine($"Email {dto.Email} already exists");
+            return BadRequest("Email already exists");
+        }
+
+        // Validate email format
+        if (string.IsNullOrEmpty(dto.Email) || !IsValidEmail(dto.Email))
+        {
+            Console.WriteLine("Invalid email format");
+            return BadRequest("Invalid email format");
+        }
+
+        // Validate required fields
+        if (string.IsNullOrEmpty(dto.Username) || string.IsNullOrEmpty(dto.Password) || 
+            string.IsNullOrEmpty(dto.Name))
+        {
+            Console.WriteLine("Missing required fields");
+            return BadRequest("Username, name, and password are required");
+        }
+
+        // Create new user
+        var newUser = new Users
+        {
+            UserName = dto.Username,
+            Email = dto.Email,
+            Name = dto.Name,
+            Address = dto.Address 
+        };
+
+        // Create user with password
+        var result = await _userManager.CreateAsync(newUser, dto.Password);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            Console.WriteLine($"Failed to create user: {errors}");
+            return BadRequest($"Failed to create user: {errors}");
+        }
+
+        Console.WriteLine($"User {dto.Username} registered successfully!");
+        return Ok("User registered successfully");
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

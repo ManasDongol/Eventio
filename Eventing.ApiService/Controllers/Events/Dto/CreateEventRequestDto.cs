@@ -6,7 +6,6 @@ namespace Eventing.ApiService.Controllers.Events.Dto;
 public sealed record CreateEventRequestDto(
     [Required]
     [MaxLength(64)]
-    [RegularExpression("^([A-Z][a-z]+)( [A-Z][a-z]+)*$",ErrorMessage = "The Full Name field is not in a valid format.")]
     [property: Description("The user's full name, up to 64 characters")]
     string Title,
 
